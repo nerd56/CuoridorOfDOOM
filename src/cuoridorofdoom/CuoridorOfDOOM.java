@@ -18,6 +18,7 @@ class FrameOfDOOM extends JFrame implements Runnable {
 	ComponentOfDOOM component;
 	
 	FrameOfDOOM() {
+		//setUndecorated(true);
 		component = new ComponentOfDOOM();
 		add(component);
 		pack();
@@ -26,6 +27,8 @@ class FrameOfDOOM extends JFrame implements Runnable {
 					(size.height - getHeight())/2);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setTitle("CuoridorOfDOOM");
+		//setExtendedState(JFrame.MAXIMIZED_BOTH);
+		//setUndecorated(true);
 		setVisible(true);
 		
 		addKeyListener(component.camera.keyListener);

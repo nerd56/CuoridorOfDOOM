@@ -11,8 +11,9 @@ import java.io.*;
 import java.awt.image.DataBufferInt;
 
 class ComponentOfDOOM extends JComponent {
-	private static final int WIDTH = 640;
-	private static final int HEIGHT = 360;
+	private static final int WIDTH = 1920/4;
+	private static final int HEIGHT = 1080/4;
+	private static final int SCALE = 2;
 	
 	private static final int CENT_X = WIDTH/2;
 	private static final int CENT_Y = HEIGHT/2;
@@ -38,7 +39,7 @@ class ComponentOfDOOM extends JComponent {
 		String[] paths = {
 			"res/redbrick.png",
 			"res/eagle.png",
-			"res/nazi2.png",
+			"res/bedrock.png",
 			"res/bluestone.png"
 		};
 		try {
@@ -54,24 +55,27 @@ class ComponentOfDOOM extends JComponent {
 		double sin = Math.sin(camera.pov);
 		
 		for (int i = CENT_Y; i > 0; i--) {
-			double z = COL_SIZE/2.0/i;	
-			double tg = Math.tan(camera.fov/2)*z;
-			double x = camera.x+cos*z+tg*sin;
-			double y = camera.y+sin*z-tg*cos;
-			double stepX = sin*tg/WIDTH*2;
-			double stepY = cos*tg/WIDTH*2;
-			
-			for (int j = 0; j < WIDTH; j++) {
-				var gr = imgs[2];
-				int pix1 = gr.bitmap[Math.floorMod((int)(x*gr.width), gr.width) +
-										Math.floorMod((int)(y*gr.height), gr.height)*gr.width];
-				pixels[j + (i+CENT_Y-1)*WIDTH] = pix1;
-				pixels[j + (CENT_Y-i)*WIDTH] = pix1;
-	
-				x -= stepX;
-				y += stepY;
+			for (double h : new double[]{camera.h, 1-camera.h}) {
+				double z = COL_SIZE*h/i;
+				double tg = Math.tan(camera.fov/2)*z;
+				double x = camera.x+cos*z+tg*sin;
+				double y = camera.y+sin*z-tg*cos;
+				double stepX = sin*tg/WIDTH*2;
+				double stepY = cos*tg/WIDTH*2;
+				
+				for (int j = 0; j < WIDTH; j++) {
+					var gr = imgs[2];
+					int pix1 = gr.bitmap[Math.floorMod((int)(x*gr.width), gr.width) +
+											Math.floorMod((int)(y*gr.height), gr.height)*gr.width];
+					if (h == camera.h)   pixels[j + (i+CENT_Y-1)*WIDTH] = pix1;
+					if (h == 1-camera.h) pixels[j + (CENT_Y-i)*WIDTH] = pix1;
+		
+					x -= stepX;
+					y += stepY;
+				}
 			}
 		}
+		
 		
 		double[][] rays = camera.castRays();
 		for (int i = 0; i < rays.length; i++) {
@@ -80,21 +84,26 @@ class ComponentOfDOOM extends JComponent {
 			int size = (int)(COL_SIZE/len);
 			double stepy = (double)bitmap.height / size;
 			int x = (int)(bitmap.width * rays[i][1]);
+			int yOffset = (HEIGHT-size-(int)((0.5-camera.h)*size))/2;
 			int min = Math.min(HEIGHT, size);
-			int yOffset = (HEIGHT-size)/2;
 			int startY = 0;
 			if (yOffset < 0) {
 				startY = -yOffset;
 				yOffset = 0;
 			}
 			
-			for (int y = 0; y < min; y++) {
+			int end = min;
+			if (yOffset+size >= HEIGHT) {
+				end = (int)(size-(yOffset+size-HEIGHT));
+			}
+			
+			for (int y = 0; y < end; y++) {
 				int pixel = bitmap.bitmap[x + (int)((y+startY)*stepy)*bitmap.width];
 				pixels[i + (y+yOffset)*WIDTH] = pixel;
 			}
 		}
 		
-		g2.drawImage(img, 0, 0, WIDTH, HEIGHT, null);
+		g2.drawImage(img, 0, 0, WIDTH*SCALE, HEIGHT*SCALE, null);
 		
 		double ips = ipsCounter.getIPS();
 		secondsFromLastFPSUpdate += 1/ips;
@@ -103,11 +112,6 @@ class ComponentOfDOOM extends JComponent {
 			secondsFromLastFPSUpdate--;
 			System.out.println("fps " + fps);
 		}
-		/*
-		g2.setFont(font);
-		g2.setPaint(Color.WHITE);
-		g2.drawString(fps+"", 2, 10);
-		*/
 	}
 	
 	void loadImages(String[] paths) throws IOException {
@@ -123,15 +127,8 @@ class ComponentOfDOOM extends JComponent {
 		}
 	}
 	
-	void drawFloorAndRoof(Graphics2D g2) {
-		g2.setPaint(floorColor);
-		g2.fill(floorRect);
-		g2.setPaint(roofColor);
-		g2.fill(roofRect);
-	}
-	
 	@Override
 	public Dimension getPreferredSize() {
-		return new Dimension(WIDTH, HEIGHT);
+		return new Dimension(WIDTH*SCALE, HEIGHT*SCALE);
 	}
 }

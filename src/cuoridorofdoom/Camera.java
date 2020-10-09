@@ -6,7 +6,7 @@ import java.util.*;
 
 class Camera {
 	private double sensivity = 3;
-	private double speed = 3;
+	private double speed = 4;
 	
 	public double x, y;
 	public double fov, pov;
@@ -14,6 +14,7 @@ class Camera {
 	private int[][] map;
 	private double step;
 	private double r;
+	public double h = 0.5;
 	
 	KeyHandler keyListener = new KeyHandler();
 	IPSCounter ipsCounter = new IPSCounter();
@@ -41,9 +42,12 @@ class Camera {
 	
 	double[][] castRays() {
 		var rays = new double[raysCount][2];
-		double leftRayAngle = pov - fov/2;
+		double aCos = Math.cos(fov/2);
+		double left = -Math.sin(fov/2);
+		double step = left/raysCount*-2;
 		for (int i = 0; i < rays.length; i++) {
-			double[] ray = castRay(leftRayAngle + step*i);
+			double angle = pov + atan((left+step*i)/aCos);
+			double[] ray = castRay(angle);
 			rays[i] = ray;
 		}
 		return rays;
@@ -105,7 +109,7 @@ class Camera {
 	}
 	
 	void update() {
-		double xVel = 0, yVel = 0, rotation = 0;
+		double xVel = 0, yVel = 0, hVel = 0, rotation = 0;
 		
 		ArrayList<Integer> keys = keyListener.getKeys();
 		
@@ -125,6 +129,12 @@ class Camera {
 			xVel -= cos(pov-PI/2);
 			yVel -= sin(pov-PI/2);
 		}
+		if (keys.contains(KeyEvent.VK_Q)) {
+			hVel -= 1;
+		}
+		if (keys.contains(KeyEvent.VK_E)) {
+			hVel += 1;
+		}
 		
 		if (keys.contains(KeyEvent.VK_RIGHT))
 			rotation += sensivity;
@@ -140,6 +150,7 @@ class Camera {
 		
 		xVel /= ips;
 		yVel /= ips;
+		hVel /= ips;
 		rotation /= ips;
 		
 		x += xVel;
@@ -156,6 +167,9 @@ class Camera {
 		else if (map[(int)(y+r)][(int)x] != 0) {
 			y = (int)(y+r)-r;
 		}
+		h += hVel;
+		if (h > 1) h = 1;
+		if (h < 0) h = 0;
 		pov += rotation;
 	}
 }
